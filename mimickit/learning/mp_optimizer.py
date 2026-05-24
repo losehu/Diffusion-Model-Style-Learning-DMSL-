@@ -15,10 +15,10 @@ class MPOptimizer():
         self._param_list = param_list
         self._grad_clip = float(config.get("grad_clip", 0.0))
         self._optimizer = self._build_optimizer(config, param_list)
-        self._use_amp = bool(config.get("use_amp", False))
-        self._amp_dtype = self._parse_amp_dtype(config.get("amp_type", "fp16"))
+        self._use_mixed_precision = bool(config.get("use_mixed_precision", False))
+        self._amp_dtype = self._parse_amp_dtype(config.get("mixed_precision_type", "fp16"))
 
-        use_grad_scaler = self._use_amp and self._amp_dtype == torch.float16
+        use_grad_scaler = self._use_mixed_precision and self._amp_dtype == torch.float16
         self._grad_scaler = torch.cuda.amp.GradScaler(enabled=use_grad_scaler)
 
         self._steps = 0
@@ -33,8 +33,8 @@ class MPOptimizer():
         self._optimizer.zero_grad()
 
         if callable(loss_or_factory):
-            with torch.cuda.amp.autocast(
-                enabled=self._use_amp,
+            with torch.amp.autocast(
+                enabled=self._use_mixed_precision,
                 dtype=self._amp_dtype,
             ):
                 loss = loss_or_factory()
@@ -77,13 +77,13 @@ class MPOptimizer():
                 param.copy_(global_param)
         return
 
-    def _parse_amp_dtype(self, amp_type):
-        if (amp_type == "fp16"):
+    def _parse_amp_dtype(self, mixed_precision_type):
+        if (mixed_precision_type == "fp16"):
             return torch.float16
-        elif (amp_type == "bf16"):
+        elif (mixed_precision_type == "bf16"):
             return torch.bfloat16
         else:
-            assert(False), "Unsupported AMP type: " + amp_type
+            assert(False), "Unsupported AMP type: " + mixed_precision_type
     
     def _build_optimizer(self, config, param_list):
         lr = float(config["learning_rate"])
