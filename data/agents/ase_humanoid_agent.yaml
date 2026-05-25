@@ -29,7 +29,7 @@ disc_optimizer:
 enc_optimizer:
     type: "Adam"
     learning_rate: 5e-5
-    
+
 discount: 0.99
 steps_per_iter: 32
 iters_per_output: 200

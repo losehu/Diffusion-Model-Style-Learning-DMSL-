@@ -17,12 +17,12 @@ actor_optimizer:
 critic_optimizer:
     type: "SGD"
     learning_rate: 1e-4
-    
+
 disc_optimizer:
     type: "SGD"
     learning_rate: 2.5e-4
     weight_decay: 0.0001
-    
+
 discount: 0.99
 steps_per_iter: 32
 iters_per_output: 200
