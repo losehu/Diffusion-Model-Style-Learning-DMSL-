@@ -186,12 +186,15 @@ class AWRAgent(base_agent.BaseAgent):
     
     def _update_critic(self, batch_size, steps):
         info = dict()
+        device_type = torch.device(self._device).type
 
         for i in range(steps):
             batch = self._exp_buffer.sample(batch_size)
-            with torch.amp.autocast(device_type="cuda", enabled=self._use_mixed_precision, dtype=torch.bfloat16):
+
+            with torch.amp.autocast(device_type=device_type, enabled=self._use_mixed_precision, dtype=torch.bfloat16):
                 loss_info = self._compute_critic_loss(batch)
                 loss = loss_info["critic_loss"]
+
             self._critic_optimizer.step(loss)
 
             torch_util.add_torch_dict(loss_info, info)
@@ -201,12 +204,15 @@ class AWRAgent(base_agent.BaseAgent):
 
     def _update_actor(self, batch_size, num_steps):
         info = dict()
+        device_type = torch.device(self._device).type
 
         for i in range(num_steps):
             batch = self._exp_buffer.sample(batch_size)
-            with torch.amp.autocast(device_type="cuda", enabled=self._use_mixed_precision, dtype=torch.bfloat16):
+
+            with torch.amp.autocast(device_type=device_type, enabled=self._use_mixed_precision, dtype=torch.bfloat16):
                 loss_info = self._compute_actor_loss(batch)
                 loss = loss_info["actor_loss"]
+
             self._actor_optimizer.step(loss)
 
             torch_util.add_torch_dict(loss_info, info)
