@@ -1,10 +1,18 @@
 import numbers
 import numpy as np
 import os
-import tensorboardX
+
+try:
+    from tensorboardX import SummaryWriter
+except ImportError:
+    from torch.utils.tensorboard import SummaryWriter
 
 import util.logger as logger
-import util.video as video
+
+try:
+    import util.video as video
+except ImportError:
+    video = None
 
 class TBLogger(logger.Logger):
     MISC_TAG = "Misc"
@@ -26,7 +34,7 @@ class TBLogger(logger.Logger):
 
         if (logger.Logger.is_root()):
             output_dir = os.path.dirname(filename)
-            self._writer = tensorboardX.SummaryWriter(output_dir)
+            self._writer = SummaryWriter(output_dir)
             
         return
 
@@ -56,12 +64,14 @@ class TBLogger(logger.Logger):
                     val = entry.val
                     tag = self._key_tags[i]
 
-                    if (isinstance(val, video.Video)):
+                    if (video is not None and isinstance(val, video.Video)):
                         self._write_video(tag, val, step_val)
                     elif (isinstance(entry.val, numbers.Number)):
                         self._writer.add_scalar(tag, val, step_val)
                     else:
                         assert(False), "Unsupported Tensorboard value type: {}".format(type(val))
+
+            self._writer.flush()
         return
     
     def _add_collection(self, name, key):

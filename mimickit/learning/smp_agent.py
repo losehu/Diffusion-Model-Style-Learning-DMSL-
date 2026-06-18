@@ -170,13 +170,19 @@ class SMPAgent(ppo_agent.PPOAgent):
         smp_r, sds_info = self._calc_smp_rewards(norm_disc_obs_flat)
         
         smp_reward_std, smp_reward_mean = torch.std_mean(smp_r)
+        task_reward_std, task_reward_mean = torch.std_mean(task_r)
 
         r = self._task_reward_weight * task_r + self._smp_reward_weight * smp_r
         self._exp_buffer.set_data_flat("reward", r)
+        combined_reward_std, combined_reward_mean = torch.std_mean(r)
 
         info = {
+            "task_reward_mean": task_reward_mean,
+            "task_reward_std": task_reward_std,
             "smp_reward_mean": smp_reward_mean,
-            "smp_reward_std": smp_reward_std
+            "smp_reward_std": smp_reward_std,
+            "combined_reward_mean": combined_reward_mean,
+            "combined_reward_std": combined_reward_std,
         }
         info.update(sds_info)
 

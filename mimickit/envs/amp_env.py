@@ -10,6 +10,7 @@ class AMPEnv(deepmimic_env.DeepMimicEnv):
     def __init__(self, env_config, engine_config, num_envs, device, visualize, record_video=False):
         self._num_disc_obs_steps = env_config["num_disc_obs_steps"]
         self._disc_dof_vel_obs = env_config.get("disc_dof_vel_obs", True)
+        self._enable_deepmimic_reward = env_config.get("enable_deepmimic_reward", False)
         super().__init__(env_config=env_config, engine_config=engine_config, num_envs=num_envs, device=device,
                          visualize=visualize, record_video=record_video)
         return
@@ -184,9 +185,14 @@ class AMPEnv(deepmimic_env.DeepMimicEnv):
         return
     
     def _update_ref_motion(self):
-        if (self._enable_ref_char()):
+        if (self._should_update_ref_motion()):
             super()._update_ref_motion()
         return
+
+    def _should_update_ref_motion(self):
+        return self._enable_ref_char() \
+            or self._enable_deepmimic_reward \
+            or self._pose_termination
     
     def _update_observations(self, env_ids=None):
         super()._update_observations(env_ids)
@@ -278,6 +284,8 @@ class AMPEnv(deepmimic_env.DeepMimicEnv):
         return
 
     def _update_reward(self):
+        if (self._enable_deepmimic_reward):
+            deepmimic_env.DeepMimicEnv._update_reward(self)
         return
     
     def _reset_envs(self, env_ids):

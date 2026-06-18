@@ -4,6 +4,8 @@
 
 "SMP: Reusable Score-Matching Motion Priors for Physics-Based Character Control" (https://xbpeng.github.io/projects/SMP/index.html).
 
+For the current Go2 trot-track setup and scripts, see the Chinese guide: [`README_SMP_GO2_CN.md`](README_SMP_GO2_CN.md).
+
 ## Train Task Policies with the LaFAN1 Prior
 
 Use the pretrained LaFAN1 prior to train a task policy for the `location`, `steering`, or `dodgeball` task:

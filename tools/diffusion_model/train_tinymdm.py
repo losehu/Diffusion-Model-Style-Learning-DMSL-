@@ -6,6 +6,7 @@ import numpy as np
 import os
 import random
 import shutil
+import time
 import torch
 import torch.optim as optim
 import yaml
@@ -28,6 +29,63 @@ def build_logger(log_file):
     log.set_step_key("Iter")
     log.configure_output_file(log_file)
     return log
+
+def _format_duration(seconds):
+    seconds = max(0, int(seconds))
+    hours, rem = divmod(seconds, 3600)
+    minutes, seconds = divmod(rem, 60)
+    if hours > 0:
+        return f"{hours:d}:{minutes:02d}:{seconds:02d}"
+    return f"{minutes:02d}:{seconds:02d}"
+
+class ProgressBar:
+    def __init__(self, total, width=30, min_interval=0.5):
+        self._total = total
+        self._width = width
+        self._min_interval = min_interval
+        self._start_time = time.time()
+        self._last_update_time = 0.0
+        self._last_line_len = 0
+        return
+
+    def update(self, step, loss=None, force=False):
+        now = time.time()
+        if (not force) and (now - self._last_update_time < self._min_interval):
+            return
+
+        self._last_update_time = now
+        progress = min(float(step) / float(self._total), 1.0)
+        filled = int(round(self._width * progress))
+        bar = "#" * filled + "-" * (self._width - filled)
+
+        elapsed = now - self._start_time
+        if step > 0:
+            eta = elapsed * (self._total - step) / float(step)
+        else:
+            eta = 0.0
+
+        loss_text = "" if loss is None else f" loss={loss:.4f}"
+        line = (
+            f"\r[{bar}] {step}/{self._total} "
+            f"{100.0 * progress:5.1f}%{loss_text} "
+            f"elapsed={_format_duration(elapsed)} eta={_format_duration(eta)}"
+        )
+        sys.stderr.write(line)
+        sys.stderr.flush()
+        self._last_line_len = len(line)
+        return
+
+    def clear(self):
+        if self._last_line_len > 0:
+            sys.stderr.write("\r" + " " * self._last_line_len + "\r")
+            sys.stderr.flush()
+        return
+
+    def close(self):
+        self.update(self._total, force=True)
+        sys.stderr.write("\n")
+        sys.stderr.flush()
+        return
 
 @torch.no_grad()
 def generate(model, dataset, obs_space, config, device, out_motion_dir, enable_ema=False, num_samples=16):
@@ -138,6 +196,7 @@ def train(cfg_path, out_dir=None, device="cuda"):
     num_iters = config['num_iterations']
     curr_iters = 0
     loss_sum = 0
+    progress_bar = ProgressBar(num_iters)
 
     while curr_iters < num_iters:
         samples = dataset_env.fetch_obs_demo(batch_size).clone().detach()
@@ -155,7 +214,10 @@ def train(cfg_path, out_dir=None, device="cuda"):
         if model.model_ema is not False:
             model.ema_dmodel.update()
 
+        progress_bar.update(curr_iters + 1, loss=loss.item())
+
         if (curr_iters % output_iter == 0 and curr_iters != 0) or (curr_iters == num_iters - 1):
+            progress_bar.clear()
             model.eval()
             generate(model, dataset_env, obs_space, config, device, out_motion_dir=out_motion_dir,
                     enable_ema=model.model_ema, num_samples=16)
@@ -168,9 +230,11 @@ def train(cfg_path, out_dir=None, device="cuda"):
             log.write_log()
 
             loss_sum = 0
+            progress_bar.update(curr_iters + 1, loss=loss.item(), force=True)
 
         curr_iters += 1
 
+    progress_bar.close()
     return
 
 
