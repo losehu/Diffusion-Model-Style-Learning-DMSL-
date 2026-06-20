@@ -32,15 +32,30 @@ output/smp_go2_trot_track_reward/prior/
 ## 训练 Prior
 
 每次启动都会用 `月日时分秒` 创建新目录，例如 `output/smp_prior_go2_trot_track_0618123059`。
+默认训练 `200_000` iterations。
 
 ```bash
 scripts/train_go2_trot_track_prior.sh
+```
+
+训练其它步态时只改 `GAIT`：
+
+```bash
+GAIT=pace scripts/train_go2_trot_track_prior.sh
+GAIT=canter scripts/train_go2_trot_track_prior.sh
+GAIT=jump scripts/train_go2_trot_track_prior.sh
 ```
 
 指定设备：
 
 ```bash
 DEVICE=cuda:0 scripts/train_go2_trot_track_prior.sh
+```
+
+临时覆盖 prior 训练轮数：
+
+```bash
+PRIOR_ITERS=50000 scripts/train_go2_trot_track_prior.sh
 ```
 
 ## 训练 Policy
@@ -51,11 +66,26 @@ DEVICE=cuda:0 scripts/train_go2_trot_track_prior.sh
 scripts/train_go2_trot_track_policy.sh
 ```
 
+训练其它步态时，对应 gait 的 prior 要先训练好：
+
+```bash
+GAIT=pace scripts/train_go2_trot_track_policy.sh
+GAIT=canter scripts/train_go2_trot_track_policy.sh
+GAIT=jump scripts/train_go2_trot_track_policy.sh
+```
+
 如果刚训练过 timestamp prior，policy 脚本会自动使用最新的 `output/smp_prior_go2_trot_track_*`。也可以手动指定：
 
 ```bash
 PRIOR_DIR=output/smp_prior_go2_trot_track_0618123059 \
 scripts/train_go2_trot_track_policy.sh
+```
+
+其它步态的输出目录会自动带 gait 名字，例如：
+
+```text
+output/smp_prior_go2_pace_track_0618123059
+output/smp_go2_pace_track_0618123059
 ```
 
 双卡训练：
@@ -96,6 +126,14 @@ scripts/test_go2_trot_track_policy.sh
 
 ```bash
 scripts/test_go2_trot_track_policy.sh output/smp_go2_trot_track_0618123059/model.pt
+```
+
+测试其它步态的最新模型：
+
+```bash
+GAIT=pace scripts/test_go2_trot_track_policy.sh
+GAIT=canter scripts/test_go2_trot_track_policy.sh
+GAIT=jump scripts/test_go2_trot_track_policy.sh
 ```
 
 换端口：
