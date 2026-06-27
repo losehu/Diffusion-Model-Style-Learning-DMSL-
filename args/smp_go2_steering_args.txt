@@ -1,0 +1,8 @@
+--num_envs 4096
+--visualize false
+
+--engine_config data/engines/isaac_gym_engine.yaml
+--env_config data/envs/smp_go2_steering_env.yaml
+--agent_config data/agents/smp_go2_steering_agent.yaml
+
+--out_dir output/smp_go2_trot_steering

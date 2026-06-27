@@ -16,6 +16,7 @@ Instructions for each method are available here:
 - [LCP - Lipschitz-Constrained Policies](docs/README_LCP.md)
 - [ADD - Adversarial Differential Discriminator](docs/README_ADD.md)
 - [SMP - Score-Matching Motion Priors](docs/README_SMP.md)
+- [SMP-Go2 中文说明](docs/README_SMP_GO2_CN.md)
 
 ---
 

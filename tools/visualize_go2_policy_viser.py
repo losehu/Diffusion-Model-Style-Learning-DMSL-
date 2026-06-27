@@ -94,26 +94,25 @@ def build_env_agent(args):
 
 
 def maybe_set_commands(env, obs, cmd_enable, cmd_x, cmd_y, cmd_yaw):
-    if not (cmd_enable.value and hasattr(env, "commands")):
+    if not cmd_enable.value:
         return obs
 
-    env.commands[:, 0] = cmd_x.value
-    env.commands[:, 1] = cmd_y.value
-    env.commands[:, 2] = cmd_yaw.value
+    if hasattr(env, "commands"):
+        env.commands[:, 0] = cmd_x.value
+        env.commands[:, 1] = cmd_y.value
+        env.commands[:, 2] = cmd_yaw.value
+    elif hasattr(env, "_tar_speed") and hasattr(env, "_tar_dir"):
+        cmd = torch.tensor([cmd_x.value, cmd_y.value], device=env._device, dtype=torch.float32)
+        speed = torch.linalg.vector_norm(cmd)
+        direction = cmd / torch.clamp_min(speed, 1e-4)
+        if speed < 1e-4:
+            direction = torch.tensor([1.0, 0.0], device=env._device, dtype=torch.float32)
+        env._tar_speed[:] = speed
+        env._tar_dir[:] = direction
+        if hasattr(env, "_face_dir"):
+            env._face_dir[:] = direction
+        obs = env._compute_obs()
 
-    if obs is None or obs.ndim != 2:
-        return obs
-
-    # Best-effort patch for command-conditioned envs. The current Go2 track env does not use it.
-    try:
-        if obs.shape[1] >= 9:
-            obs[:, 6:9] = torch.tensor(
-                [cmd_x.value, cmd_y.value, cmd_yaw.value],
-                device=obs.device,
-                dtype=obs.dtype,
-            )
-    except Exception:
-        pass
     return obs
 
 
@@ -219,14 +218,17 @@ def main():
         sim_speed = server.gui.add_slider("Sim speed", min=0.1, max=2.0, step=0.05, initial_value=1.0)
 
     has_commands = hasattr(env, "commands")
+    has_steering_task = hasattr(env, "_tar_speed") and hasattr(env, "_tar_dir")
     with server.gui.add_folder("Commands"):
-        cmd_enable = server.gui.add_checkbox("Override commands", initial_value=has_commands)
+        cmd_enable = server.gui.add_checkbox("Override commands", initial_value=has_commands or has_steering_task)
         cmd_x = server.gui.add_slider("cmd vx", min=-2.0, max=2.0, step=0.05, initial_value=0.8)
         cmd_y = server.gui.add_slider("cmd vy", min=-1.0, max=1.0, step=0.05, initial_value=0.0)
         cmd_yaw = server.gui.add_slider("cmd yaw", min=-2.0, max=2.0, step=0.05, initial_value=0.0)
         cmd_note = server.gui.add_text(
             "Status",
-            "env.commands found" if has_commands else "Go2 track env has no command input",
+            "env.commands found" if has_commands else (
+                "task_steering speed command" if has_steering_task else "Go2 track env has no command input"
+            ),
             disabled=True,
         )
 
