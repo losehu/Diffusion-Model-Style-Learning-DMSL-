@@ -16,9 +16,23 @@ data/motions/go2/go2_apex_trot.pkl
 data/motions/go2/go2_apex_pace.pkl
 data/motions/go2/go2_apex_canter.pkl
 data/motions/go2/go2_apex_jump.pkl
+data/motions/go2/go2_apex_jump_clean.pkl
 ```
 
 每个 gait 都要先训练自己的 SMP prior，再训练 policy。不要拿 `trot` prior 去训 `jump` policy。
+
+`go2_apex_jump.pkl` 的末尾有一帧回到起点的根位置跳变，会造成极大的假速度。训练 jump 时优先使用 `go2_apex_jump_clean.pkl`。
+
+如果 clean 文件不存在，用下面的命令重新生成：
+
+```bash
+python tools/gmr_to_mimickit/apex_go2_csv_to_mimickit.py \
+  --input_file data/motions/go2/apex_csv/go2_retarget_jump.csv \
+  --output_file data/motions/go2/go2_apex_jump_clean.pkl \
+  --fps 50 \
+  --loop_mode 0 \
+  --drop_final_wrap_threshold 1.0
+```
 
 ## Steering 速度控制
 
@@ -141,15 +155,19 @@ TASK_REWARD_WEIGHT=0.8 SMP_REWARD_WEIGHT=0.2 \
 Jump：
 
 ```bash
-GAIT=jump ./scripts/train_go2_steering_prior.sh
+GAIT=jump MOTION_FILE=data/motions/go2/go2_apex_jump_clean.pkl \
+./scripts/train_go2_steering_prior.sh
 
-GAIT=jump RAND_TAR_DIR=False SPEED_MIN=0.0 SPEED_MAX=0.8 \
+GAIT=jump MOTION_FILE=data/motions/go2/go2_apex_jump_clean.pkl \
+RAND_TAR_DIR=False SPEED_MIN=0.0 SPEED_MAX=0.8 \
 REWARD_TAR_W=1.0 REWARD_FACE_W=0.0 REWARD_VEL_SCALE=4.0 \
 TASK_REWARD_WEIGHT=0.8 SMP_REWARD_WEIGHT=0.2 \
 ./scripts/train_go2_steering_policy.sh
 ```
 
-`jump` 不是连续速度 gait，更适合 tracking/imitation。用 steering 训练时不要期待它像 trot/pace/canter 一样稳定调速。
+`jump` 不是连续速度 gait，更适合 tracking/imitation。用 steering 训练时不要期待它像 trot/pace/canter 一样稳定调速。如果出现趴地鬼畜前进，通常是速度奖励被钻空子，优先改用 track 路线或缩小 `SPEED_MAX`。
+
+policy 脚本会检查 prior 的 `motion_file` 是否和当前 `MOTION_FILE` 一致。如果之前用坏的 `go2_apex_jump.pkl` 训练过 jump prior，不要复用那个 prior，必须用 clean 文件重新训练 prior。
 
 ### 测试 Steering Policy
 
@@ -239,6 +257,16 @@ GAIT=trot ./scripts/test_go2_trot_track_policy.sh
 
 track policy 适合看动作是否能稳定跟踪。它没有真正的速度命令输入，所以不要用它判断速度控制效果。
 
+训练 jump track 时也建议使用 clean 数据：
+
+```bash
+GAIT=jump MOTION_FILE=data/motions/go2/go2_apex_jump_clean.pkl \
+./scripts/train_go2_trot_track_prior.sh
+
+GAIT=jump MOTION_FILE=data/motions/go2/go2_apex_jump_clean.pkl \
+./scripts/train_go2_trot_track_policy.sh
+```
+
 ## 日志怎么看
 
 policy 训练重点看：
@@ -298,7 +326,7 @@ Run: GAIT=jump scripts/train_go2_steering_prior.sh
 说明这个 gait 的 prior 还没训练。先跑：
 
 ```bash
-GAIT=jump ./scripts/train_go2_steering_prior.sh
+GAIT=jump MOTION_FILE=data/motions/go2/go2_apex_jump_clean.pkl ./scripts/train_go2_steering_prior.sh
 ```
 
 然后再跑 policy。
@@ -308,7 +336,7 @@ GAIT=jump ./scripts/train_go2_steering_prior.sh
 环境变量必须写在同一条命令里：
 
 ```bash
-GAIT=jump RAND_TAR_DIR=False SPEED_MIN=0.0 SPEED_MAX=0.8 ./scripts/train_go2_steering_policy.sh
+GAIT=jump MOTION_FILE=data/motions/go2/go2_apex_jump_clean.pkl RAND_TAR_DIR=False SPEED_MIN=0.0 SPEED_MAX=0.8 ./scripts/train_go2_steering_policy.sh
 ```
 
 不要写成：

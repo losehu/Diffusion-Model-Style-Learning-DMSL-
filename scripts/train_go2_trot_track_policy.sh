@@ -14,7 +14,7 @@ case "$GAIT" in
     ;;
 esac
 
-MOTION_FILE="data/motions/go2/go2_apex_${GAIT}.pkl"
+MOTION_FILE="${MOTION_FILE:-data/motions/go2/go2_apex_${GAIT}.pkl}"
 OUT_DIR="${OUT_DIR:-output/smp_go2_${GAIT}_track_${STAMP}}"
 MAX_SAMPLES="${MAX_SAMPLES:-1310720000}"
 
@@ -40,6 +40,19 @@ if [[ ! -f "${PRIOR_DIR}/diffusion_config.yaml" || ! -f "${PRIOR_DIR}/model.pt" 
   echo "Missing prior files in ${PRIOR_DIR}" >&2
   echo "Set PRIOR_DIR=/path/to/prior_dir or run scripts/train_go2_trot_track_prior.sh first." >&2
   exit 1
+fi
+
+PRIOR_MOTION_FILE="$(sed -n 's/^motion_file:[[:space:]]*//p' "${PRIOR_DIR}/diffusion_config.yaml" | head -n 1 | tr -d '"' | xargs)"
+if [[ -n "$PRIOR_MOTION_FILE" && "${ALLOW_PRIOR_MOTION_MISMATCH:-False}" != "True" ]]; then
+  MOTION_ABS="$(readlink -f "$MOTION_FILE")"
+  PRIOR_MOTION_ABS="$(readlink -f "$PRIOR_MOTION_FILE" 2>/dev/null || true)"
+  if [[ -n "$PRIOR_MOTION_ABS" && "$MOTION_ABS" != "$PRIOR_MOTION_ABS" ]]; then
+    echo "Prior motion mismatch:" >&2
+    echo "  policy motion: ${MOTION_FILE}" >&2
+    echo "  prior motion:  ${PRIOR_MOTION_FILE}" >&2
+    echo "Retrain the prior with the same MOTION_FILE, or set ALLOW_PRIOR_MOTION_MISMATCH=True." >&2
+    exit 1
+  fi
 fi
 
 mkdir -p "$OUT_DIR"

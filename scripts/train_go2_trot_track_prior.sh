@@ -14,7 +14,7 @@ case "$GAIT" in
     ;;
 esac
 
-MOTION_FILE="data/motions/go2/go2_apex_${GAIT}.pkl"
+MOTION_FILE="${MOTION_FILE:-data/motions/go2/go2_apex_${GAIT}.pkl}"
 OUT_DIR="${OUT_DIR:-output/smp_prior_go2_${GAIT}_track_${STAMP}}"
 DEVICE="${DEVICE:-cuda}"
 

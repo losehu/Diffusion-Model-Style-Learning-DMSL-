@@ -52,7 +52,15 @@ def _read_csv(input_file):
     return data
 
 
-def convert_file(input_file, output_file, fps, loop_mode, rebase_xy):
+def _drop_final_wrap_frame(frames, threshold):
+    final_step = np.linalg.norm(frames[-1, 0:2] - frames[-2, 0:2])
+    if final_step > threshold:
+        frames = frames[:-1]
+        print(f"Dropped final wrap frame: xy_step={final_step:.3f}m > {threshold:.3f}m")
+    return frames
+
+
+def convert_file(input_file, output_file, fps, loop_mode, rebase_xy, drop_final_wrap_threshold):
     data = _read_csv(input_file)
 
     root_pos = np.stack([data["com_x"], data["com_y"], data["height"]], axis=-1)
@@ -67,6 +75,8 @@ def convert_file(input_file, output_file, fps, loop_mode, rebase_xy):
 
     joint_dof = np.stack([data[name] for name in CSV_TO_MIMICKIT_JOINT_ORDER], axis=-1)
     frames = np.concatenate([root_pos, root_rot, joint_dof], axis=-1).astype(np.float32)
+    if drop_final_wrap_threshold is not None:
+        frames = _drop_final_wrap_frame(frames, drop_final_wrap_threshold)
 
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     with open(output_file, "wb") as f:
@@ -90,6 +100,12 @@ def main():
     parser.add_argument("--fps", type=int, default=50)
     parser.add_argument("--loop_mode", type=int, default=1, choices=[0, 1])
     parser.add_argument("--no_rebase_xy", action="store_true")
+    parser.add_argument(
+        "--drop_final_wrap_threshold",
+        type=float,
+        default=None,
+        help="Drop the final frame if its XY step from the previous frame exceeds this many meters.",
+    )
     args = parser.parse_args()
 
     convert_file(
@@ -98,6 +114,7 @@ def main():
         fps=args.fps,
         loop_mode=args.loop_mode,
         rebase_xy=not args.no_rebase_xy,
+        drop_final_wrap_threshold=args.drop_final_wrap_threshold,
     )
 
 
