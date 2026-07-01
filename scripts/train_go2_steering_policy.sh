@@ -14,6 +14,58 @@ case "$GAIT" in
     ;;
 esac
 
+PRESET_CONFIG="${PRESET_CONFIG:-data/agents/smp_go2_steering_presets.yaml}"
+if [[ -f "$PRESET_CONFIG" ]]; then
+  eval "$(
+    GAIT="$GAIT" PRESET_CONFIG="$PRESET_CONFIG" python - <<'PY'
+import os
+import shlex
+import yaml
+
+
+def merge_dict(base, override):
+    merged = dict(base or {})
+    merged.update(override or {})
+    return merged
+
+
+def shell_value(value):
+    if isinstance(value, bool):
+        value = "True" if value else "False"
+    return shlex.quote(str(value))
+
+
+with open(os.environ["PRESET_CONFIG"], "r") as f:
+    presets = yaml.safe_load(f) or {}
+
+gait = os.environ["GAIT"]
+default = presets.get("default", {})
+gait_preset = presets.get(gait, {})
+env_preset = merge_dict(default.get("env", {}), gait_preset.get("env", {}))
+agent_preset = merge_dict(default.get("agent", {}), gait_preset.get("agent", {}))
+
+items = {
+    "MOTION_FILE": env_preset.get("motion_file"),
+    "RAND_TAR_DIR": env_preset.get("rand_tar_dir"),
+    "RAND_FACE_DIR": env_preset.get("rand_face_dir"),
+    "SPEED_MIN": env_preset.get("tar_speed_min"),
+    "SPEED_MAX": env_preset.get("tar_speed_max"),
+    "REWARD_TAR_W": env_preset.get("reward_steering_tar_w"),
+    "REWARD_FACE_W": env_preset.get("reward_steering_face_w"),
+    "REWARD_VEL_SCALE": env_preset.get("reward_steering_vel_scale"),
+    "TASK_REWARD_WEIGHT": agent_preset.get("task_reward_weight"),
+    "SMP_REWARD_WEIGHT": agent_preset.get("smp_reward_weight"),
+}
+
+for name, value in items.items():
+    if os.environ.get(name, ""):
+        value = os.environ[name]
+    if value is not None:
+        print(f"{name}={shell_value(value)}")
+PY
+  )"
+fi
+
 MOTION_FILE="${MOTION_FILE:-data/motions/go2/go2_apex_${GAIT}.pkl}"
 OUT_DIR="${OUT_DIR:-output/smp_go2_${GAIT}_steering_${STAMP}}"
 MAX_SAMPLES="${MAX_SAMPLES:-1310720000}"
@@ -88,6 +140,7 @@ echo "Training Go2 ${GAIT} steering policy"
 echo "Output: ${OUT_DIR}"
 echo "Prior:  ${PRIOR_DIR}"
 echo "Motion: ${MOTION_FILE}"
+echo "Preset: ${PRESET_CONFIG}"
 echo "Speed:  ${SPEED_MIN}..${SPEED_MAX} m/s"
 echo "Random target direction: ${RAND_TAR_DIR}"
 echo "Steering reward: tar=${REWARD_TAR_W}, face=${REWARD_FACE_W}, vel_scale=${REWARD_VEL_SCALE}"

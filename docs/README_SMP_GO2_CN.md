@@ -41,6 +41,7 @@ python tools/gmr_to_mimickit/apex_go2_csv_to_mimickit.py \
 ```text
 data/envs/smp_go2_steering_env.yaml
 data/agents/smp_go2_steering_agent.yaml
+data/agents/smp_go2_steering_presets.yaml
 tools/diffusion_model/config/tinymdm_go2_steering.yaml
 args/smp_go2_steering_args.txt
 scripts/train_go2_steering_prior.sh
@@ -99,16 +100,19 @@ GAIT=trot DEVICE=cuda:0 ./scripts/train_go2_steering_prior.sh
 
 ### 训练 Trot Policy
 
-APEX 的 Go2 数据主要是向前 gait，不是原版人形那种多方向、多速度 locomotion 数据。所以训练可控速度时，先用前向速度分布：
+APEX 的 Go2 数据主要是向前 gait，不是原版人形那种多方向、多速度 locomotion 数据。所以训练可控速度时，先用前向速度分布。推荐参数已经写在：
 
-```bash
-GAIT=trot RAND_TAR_DIR=False SPEED_MIN=0.8 SPEED_MAX=1.6 \
-REWARD_TAR_W=1.0 REWARD_FACE_W=0.0 REWARD_VEL_SCALE=4.0 \
-TASK_REWARD_WEIGHT=0.8 SMP_REWARD_WEIGHT=0.2 \
-./scripts/train_go2_steering_policy.sh
+```text
+data/agents/smp_go2_steering_presets.yaml
 ```
 
-这组参数的含义：
+直接训练：
+
+```bash
+GAIT=trot ./scripts/train_go2_steering_policy.sh
+```
+
+脚本会读取 `data/agents/smp_go2_steering_presets.yaml`，复制基础 env/agent 配置到本次输出目录，再把 gait 对应的参数写进 run config。preset 里的主要参数含义：
 
 ```text
 RAND_TAR_DIR=False          只训前向速度，先别训全方向
@@ -120,20 +124,11 @@ TASK_REWARD_WEIGHT=0.8      更重视速度任务
 SMP_REWARD_WEIGHT=0.2       prior 仍保留动作风格约束
 ```
 
-如果不传这些环境变量，脚本会使用更接近原版 SMP 的默认值：
+临时实验时，命令行环境变量仍然可以覆盖 preset：
 
-```text
-RAND_TAR_DIR=True
-SPEED_MIN=0.5
-SPEED_MAX=5.0
-REWARD_TAR_W=0.7
-REWARD_FACE_W=0.3
-REWARD_VEL_SCALE=0.5
-TASK_REWARD_WEIGHT=0.5
-SMP_REWARD_WEIGHT=0.5
+```bash
+GAIT=trot SPEED_MIN=0.6 SPEED_MAX=1.8 ./scripts/train_go2_steering_policy.sh
 ```
-
-这套默认值对原版人形 locomotion 数据合适，但对当前 APEX Go2 单 gait 容易学成站桩。
 
 ### 训练其他步态
 
@@ -144,10 +139,7 @@ Pace：
 ```bash
 GAIT=pace ./scripts/train_go2_steering_prior.sh
 
-GAIT=pace RAND_TAR_DIR=False SPEED_MIN=0.5 SPEED_MAX=1.3 \
-REWARD_TAR_W=1.0 REWARD_FACE_W=0.0 REWARD_VEL_SCALE=4.0 \
-TASK_REWARD_WEIGHT=0.8 SMP_REWARD_WEIGHT=0.2 \
-./scripts/train_go2_steering_policy.sh
+GAIT=pace ./scripts/train_go2_steering_policy.sh
 ```
 
 Canter：
@@ -155,23 +147,15 @@ Canter：
 ```bash
 GAIT=canter ./scripts/train_go2_steering_prior.sh
 
-GAIT=canter RAND_TAR_DIR=False SPEED_MIN=1.0 SPEED_MAX=2.4 \
-REWARD_TAR_W=1.0 REWARD_FACE_W=0.0 REWARD_VEL_SCALE=4.0 \
-TASK_REWARD_WEIGHT=0.8 SMP_REWARD_WEIGHT=0.2 \
-./scripts/train_go2_steering_policy.sh
+GAIT=canter ./scripts/train_go2_steering_policy.sh
 ```
 
 Jump：
 
 ```bash
-GAIT=jump MOTION_FILE=data/motions/go2/go2_apex_jump_clean.pkl \
-./scripts/train_go2_steering_prior.sh
+GAIT=jump ./scripts/train_go2_steering_prior.sh
 
-GAIT=jump MOTION_FILE=data/motions/go2/go2_apex_jump_clean.pkl \
-RAND_TAR_DIR=False SPEED_MIN=0.0 SPEED_MAX=0.8 \
-REWARD_TAR_W=1.0 REWARD_FACE_W=0.0 REWARD_VEL_SCALE=4.0 \
-TASK_REWARD_WEIGHT=0.8 SMP_REWARD_WEIGHT=0.2 \
-./scripts/train_go2_steering_policy.sh
+GAIT=jump ./scripts/train_go2_steering_policy.sh
 ```
 
 `jump` 不是连续速度 gait，更适合 tracking/imitation。用 steering 训练时不要期待它像 trot/pace/canter 一样稳定调速。如果日志里出现 `Task_Reward_Mean` 接近 1、但 `Smp_Reward_Mean` 接近 0，说明它在用趴地爬行刷速度奖励，这个 run 可以直接停掉。
@@ -342,7 +326,7 @@ Run: GAIT=jump scripts/train_go2_steering_prior.sh
 说明这个 gait 的 prior 还没训练。先跑：
 
 ```bash
-GAIT=jump MOTION_FILE=data/motions/go2/go2_apex_jump_clean.pkl ./scripts/train_go2_steering_prior.sh
+GAIT=jump ./scripts/train_go2_steering_prior.sh
 ```
 
 然后再跑 policy。
@@ -352,7 +336,7 @@ GAIT=jump MOTION_FILE=data/motions/go2/go2_apex_jump_clean.pkl ./scripts/train_g
 环境变量必须写在同一条命令里：
 
 ```bash
-GAIT=jump MOTION_FILE=data/motions/go2/go2_apex_jump_clean.pkl RAND_TAR_DIR=False SPEED_MIN=0.0 SPEED_MAX=0.8 ./scripts/train_go2_steering_policy.sh
+GAIT=jump SPEED_MIN=0.0 SPEED_MAX=0.8 ./scripts/train_go2_steering_policy.sh
 ```
 
 不要写成：
