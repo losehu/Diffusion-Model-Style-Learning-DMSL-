@@ -1,64 +1,86 @@
+# Go2 steering policy presets.
+# 训练脚本会先读取 default，再用具体 gait 覆盖同名字段。
+# 命令行环境变量仍然优先级最高，例如 SPEED_MIN=0.6 会覆盖这里的 tar_speed_min。
+
 default:
   env:
+    # 是否随机目标移动方向。true 会采样全方向，难度高；Go2 单 gait 数据通常先用 false 更稳。
     rand_tar_dir: true
+    # 是否随机身体朝向。false 表示身体朝向跟目标移动方向一致。
     rand_face_dir: false
-    tar_speed_min: 0.5
-    tar_speed_max: 5.0
+    # 目标速度采样范围，单位 m/s。网页测试时 cmd 速度最好先在训练范围内。
+    tar_speed_min: 0
+    tar_speed_max: 2.0
+    # 速度跟踪奖励权重。越大越重视根速度跟目标速度一致。
     reward_steering_tar_w: 0.7
+    # 朝向奖励权重。太大时可能站着朝对方向也拿分；防站桩时常设为 0。
     reward_steering_face_w: 0.3
+    # 速度误差惩罚强度。越大越严格，速度不准时奖励掉得越快。
     reward_steering_vel_scale: 0.5
   agent:
+    # PPO 最终 reward = task_reward_weight * 速度任务奖励 + smp_reward_weight * SMP 风格奖励。
+    # task 高会更听速度，smp 高会更像专家动作；task 过高、smp 过低容易钻空子。
     task_reward_weight: 0.5
     smp_reward_weight: 0.5
 
 trot:
   env:
+    # 每个 gait 默认使用自己的专家动作和 prior；不要混用不同 gait 的 prior。
     motion_file: "data/motions/go2/go2_apex_trot.pkl"
+    # APEX Go2 数据主要是单方向向前动作，所以 steering 先训前向速度。
     rand_tar_dir: false
-    tar_speed_min: 0.8
-    tar_speed_max: 1.6
+    # trot 推荐速度范围。
+    tar_speed_min: 0
+    tar_speed_max: 2.0
+    # 关闭朝向奖励并加大速度误差惩罚，减少站桩或慢蹭拿分。
     reward_steering_tar_w: 1.0
     reward_steering_face_w: 0.0
-    reward_steering_vel_scale: 4.0
+    reward_steering_vel_scale: 0.5
   agent:
-    task_reward_weight: 0.8
-    smp_reward_weight: 0.2
+    # 更偏向速度任务，但保留 SMP prior 约束动作风格。
+    task_reward_weight: 0.5
+    smp_reward_weight: 0.5
 
 pace:
   env:
     motion_file: "data/motions/go2/go2_apex_pace.pkl"
     rand_tar_dir: false
-    tar_speed_min: 0.5
-    tar_speed_max: 1.3
+    # pace 推荐速度范围。
+    tar_speed_min: 0
+    tar_speed_max: 2.0
     reward_steering_tar_w: 1.0
     reward_steering_face_w: 0.0
-    reward_steering_vel_scale: 4.0
+    reward_steering_vel_scale: 0.5
   agent:
-    task_reward_weight: 0.8
-    smp_reward_weight: 0.2
+    task_reward_weight: 0.5
+    smp_reward_weight: 0.5
 
 canter:
   env:
     motion_file: "data/motions/go2/go2_apex_canter.pkl"
     rand_tar_dir: false
-    tar_speed_min: 1.0
-    tar_speed_max: 2.4
+    # canter 推荐速度范围。
+    tar_speed_min: 0
+    tar_speed_max: 2.0
     reward_steering_tar_w: 1.0
     reward_steering_face_w: 0.0
-    reward_steering_vel_scale: 4.0
+    reward_steering_vel_scale: 0.5
   agent:
-    task_reward_weight: 0.8
-    smp_reward_weight: 0.2
+    task_reward_weight: 0.5
+    smp_reward_weight: 0.5
 
 jump:
   env:
+    # clean 版本去掉了原 jump 文件末尾回到起点的坏帧。
     motion_file: "data/motions/go2/go2_apex_jump_clean.pkl"
+    # jump 不是连续可调速 gait，更推荐 track；这里的 steering 只是实验配置。
     rand_tar_dir: false
-    tar_speed_min: 0.0
-    tar_speed_max: 0.8
+    # jump 专家大约在 1.5 m/s 附近，速度范围太低会强迫策略偏离专家动作。
+    tar_speed_min: 0
+    tar_speed_max: 2.0
     reward_steering_tar_w: 1.0
     reward_steering_face_w: 0.0
-    reward_steering_vel_scale: 4.0
+    reward_steering_vel_scale: 0.5
   agent:
-    task_reward_weight: 0.8
-    smp_reward_weight: 0.2
+    task_reward_weight: 0.5
+    smp_reward_weight: 0.5
