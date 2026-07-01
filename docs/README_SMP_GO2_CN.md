@@ -68,6 +68,15 @@ key_bodies: ["FR_foot", "FL_foot", "RR_foot", "RL_foot"]
 contact_bodies: ["FR_foot", "FL_foot", "RR_foot", "RL_foot"]
 ```
 
+网页可视化使用本仓库内的 Go2 URDF 和 mesh：
+
+```text
+data/assets/go2/urdf/go2.urdf
+data/assets/go2/dae/*.dae
+```
+
+`tools/visualize_go2_policy_viser.py` 默认读取 `data/assets/go2/urdf/go2.urdf`，运行时不再读取外部 APEX 目录。
+
 ### 训练 Trot Prior
 
 prior 默认训练 `200_000` iterations，输出目录会自动带月日时分秒：

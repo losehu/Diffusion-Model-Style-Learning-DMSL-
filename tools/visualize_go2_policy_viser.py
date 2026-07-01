@@ -158,7 +158,7 @@ def main():
     parser.add_argument("--env_config", default="data/envs/smp_go2_trot_track_env.yaml")
     parser.add_argument("--agent_config", default="output/smp_go2_trot_track_reward/agent_config.yaml")
     parser.add_argument("--engine_config", default="data/engines/isaac_gym_engine.yaml")
-    parser.add_argument("--urdf_file", default="apex/resources/robots/go2/urdf/go2.urdf")
+    parser.add_argument("--urdf_file", default="data/assets/go2/urdf/go2.urdf")
     parser.add_argument("--char_file", default="data/assets/go2/go2.xml")
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--host", default="0.0.0.0")
