@@ -1,7 +1,6 @@
 # Go2 steering policy presets.
 # 训练脚本会先读取 default，再用具体 gait 覆盖同名字段。
 # 命令行环境变量仍然优先级最高，例如 SPEED_MIN=0.6 会覆盖这里的 tar_speed_min。
-
 default:
   env:
     # 是否随机目标移动方向。true 会采样全方向，难度高；Go2 单 gait 数据通常先用 false 更稳。
@@ -9,8 +8,8 @@ default:
     # 是否随机身体朝向。false 表示身体朝向跟目标移动方向一致。
     rand_face_dir: false
     # 目标速度采样范围，单位 m/s。网页测试时 cmd 速度最好先在训练范围内。
-    tar_speed_min: 0
-    tar_speed_max: 2.0
+    tar_speed_min: 0.5
+    tar_speed_max: 5.0
     # 速度跟踪奖励权重。越大越重视根速度跟目标速度一致。
     reward_steering_tar_w: 0.7
     # 朝向奖励权重。太大时可能站着朝对方向也拿分；防站桩时常设为 0。
@@ -30,44 +29,43 @@ trot:
     # APEX Go2 数据主要是单方向向前动作，所以 steering 先训前向速度。
     rand_tar_dir: false
     # trot 推荐速度范围。
-    tar_speed_min: 0
-    tar_speed_max: 2.0
+    tar_speed_min: 0.8
+    tar_speed_max: 1.6
     # 关闭朝向奖励并加大速度误差惩罚，减少站桩或慢蹭拿分。
     reward_steering_tar_w: 1.0
     reward_steering_face_w: 0.0
-    reward_steering_vel_scale: 0.5
+    reward_steering_vel_scale: 4.0
   agent:
     # 更偏向速度任务，但保留 SMP prior 约束动作风格。
-    task_reward_weight: 0.5
-    smp_reward_weight: 0.5
-
+    task_reward_weight: 0.8
+    smp_reward_weight: 0.2
 pace:
   env:
     motion_file: "data/motions/go2/go2_apex_pace.pkl"
     rand_tar_dir: false
     # pace 推荐速度范围。
-    tar_speed_min: 0
-    tar_speed_max: 2.0
+    tar_speed_min: 0.5
+    tar_speed_max: 1.3
     reward_steering_tar_w: 1.0
     reward_steering_face_w: 0.0
-    reward_steering_vel_scale: 0.5
+    reward_steering_vel_scale: 4.0
   agent:
-    task_reward_weight: 0.5
-    smp_reward_weight: 0.5
+    task_reward_weight: 0.8
+    smp_reward_weight: 0.2
 
 canter:
   env:
     motion_file: "data/motions/go2/go2_apex_canter.pkl"
     rand_tar_dir: false
     # canter 推荐速度范围。
-    tar_speed_min: 0
-    tar_speed_max: 2.0
+    tar_speed_min: 1.0
+    tar_speed_max: 2.4
     reward_steering_tar_w: 1.0
     reward_steering_face_w: 0.0
-    reward_steering_vel_scale: 0.5
+    reward_steering_vel_scale: 4.0
   agent:
-    task_reward_weight: 0.5
-    smp_reward_weight: 0.5
+    task_reward_weight: 0.8
+    smp_reward_weight: 0.2
 
 jump:
   env:
@@ -76,11 +74,11 @@ jump:
     # jump 不是连续可调速 gait，更推荐 track；这里的 steering 只是实验配置。
     rand_tar_dir: false
     # jump 专家大约在 1.5 m/s 附近，速度范围太低会强迫策略偏离专家动作。
-    tar_speed_min: 0
-    tar_speed_max: 2.0
+    tar_speed_min: 0.6
+    tar_speed_max: 1.5
     reward_steering_tar_w: 1.0
     reward_steering_face_w: 0.0
-    reward_steering_vel_scale: 0.5
+    reward_steering_vel_scale: 4.0
   agent:
-    task_reward_weight: 0.5
-    smp_reward_weight: 0.5
+    task_reward_weight: 0.8
+    smp_reward_weight: 0.2
