@@ -152,6 +152,7 @@ echo "Speed:  ${SPEED_MIN}..${SPEED_MAX} m/s"
 echo "Random target direction: ${RAND_TAR_DIR}"
 echo "Steering reward: tar=${REWARD_TAR_W}, face=${REWARD_FACE_W}, vel_scale=${REWARD_VEL_SCALE}"
 echo "Reward weights: task=${TASK_REWARD_WEIGHT}, smp=${SMP_REWARD_WEIGHT}"
+echo "TensorBoard: tensorboard --logdir=${OUT_DIR} --port=6006"
 
 python mimickit/run.py \
   --arg_file args/smp_go2_steering_args.txt \

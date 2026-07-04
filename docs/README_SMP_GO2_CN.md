@@ -308,13 +308,15 @@ Test_Episode_Length 接近 600，说明 20 秒 episode 没提前失败。
 
 ## TensorBoard
 
-policy 脚本默认可用普通 `log.txt`。如果要 TensorBoard，可以在运行参数里加：
+Go2 steering/track policy 默认写 TensorBoard，同时仍然保留普通 `log.txt`。prior 训练也会写 TensorBoard。
+
+查看单次 run：
 
 ```bash
-GAIT=trot ./scripts/train_go2_steering_policy.sh --logger tb
+tensorboard --logdir=output/smp_go2_trot_steering_0702171841 --port=6006 --samples_per_plugin scalars=999999
 ```
 
-查看：
+查看所有 run：
 
 ```bash
 tensorboard --logdir=output --port=6006 --samples_per_plugin scalars=999999
@@ -324,6 +326,22 @@ tensorboard --logdir=output --port=6006 --samples_per_plugin scalars=999999
 
 ```bash
 tensorboard --logdir=output --port=6008 --samples_per_plugin scalars=999999
+```
+
+policy scalar 分组：
+
+```text
+0_Main        Test_Return、Train_Return、Episode_Length
+1_Info        Iteration、Samples、Wall_Time、Samples_Per_Second
+2_Env         环境诊断指标
+3_Train       Critic_Loss、Actor_Loss、Task/SMP/Combined reward、SDS loss、Exp_Prob 等
+4_Normalizer  Obs_Norm_Mean、Obs_Norm_Std
+```
+
+prior scalar 分组：
+
+```text
+0_Main        Iteration、Loss
 ```
 
 ## 常见问题

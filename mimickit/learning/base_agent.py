@@ -380,7 +380,7 @@ class BaseAgent(torch.nn.Module):
             val_name = k.title()
             if torch.is_tensor(v):
                 v = v.item()
-            self._logger.log(val_name, v)
+            self._logger.log(val_name, v, collection="3_Train")
 
         for k, v in env_diag_info.items():
             val_name = k.title()
@@ -394,8 +394,8 @@ class BaseAgent(torch.nn.Module):
         if (obs_norm_mean.dtype == torch.float32):
             obs_norm_mean = torch.mean(torch.abs(obs_norm_mean)).item()
             obs_norm_std = torch.mean(obs_norm_std).item()
-            self._logger.log("Obs_Norm_Mean", obs_norm_mean, quiet=True)
-            self._logger.log("Obs_Norm_Std", obs_norm_std, quiet=True)
+            self._logger.log("Obs_Norm_Mean", obs_norm_mean, collection="4_Normalizer", quiet=True)
+            self._logger.log("Obs_Norm_Std", obs_norm_std, collection="4_Normalizer", quiet=True)
         
         return
     

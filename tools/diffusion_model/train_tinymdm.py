@@ -15,6 +15,7 @@ import anim.motion as motion
 from learning.tinymdm.tinymdm_model import TinyMDMModel
 from motion_prior_dataset import MotionPriorData
 import util.logger as logger
+import util.tb_logger as tb_logger
 
 def fixseed(seed):
     torch.backends.cudnn.benchmark = False
@@ -24,9 +25,15 @@ def fixseed(seed):
     torch.manual_seed(seed)
     return
 
-def build_logger(log_file):
-    log = logger.Logger()
-    log.set_step_key("Iter")
+def build_logger(log_file, logger_type):
+    if logger_type == "txt":
+        log = logger.Logger()
+    elif logger_type == "tb":
+        log = tb_logger.TBLogger()
+    else:
+        raise ValueError(f"Unsupported logger: {logger_type}")
+
+    log.set_step_key("Iteration")
     log.configure_output_file(log_file)
     return log
 
@@ -144,7 +151,7 @@ def test(cfg_path, model_file, out_dir=None, num_samples=16, device="cuda"):
             enable_ema=priormodel.model_ema, num_samples=num_samples)
     return
 
-def train(cfg_path, out_dir=None, device="cuda"):
+def train(cfg_path, out_dir=None, device="cuda", logger_type="tb"):
     assert out_dir is not None and out_dir != "", "Must specify --out_dir"
     
     with open(cfg_path, "r") as stream:
@@ -168,7 +175,7 @@ def train(cfg_path, out_dir=None, device="cuda"):
         yaml.dump(config, stream)
 
     out_log_file = os.path.join(out_dir, "log.txt")
-    log = build_logger(out_log_file)
+    log = build_logger(out_log_file, logger_type)
     
     batch_size = config["batch_size"]
     num_samples_stat = config.get("num_samples_stat", 10_000)
@@ -196,6 +203,7 @@ def train(cfg_path, out_dir=None, device="cuda"):
     num_iters = config['num_iterations']
     curr_iters = 0
     loss_sum = 0
+    loss_count = 0
     progress_bar = ProgressBar(num_iters)
 
     while curr_iters < num_iters:
@@ -205,6 +213,7 @@ def train(cfg_path, out_dir=None, device="cuda"):
 
         loss = model(samples)
         loss_sum += loss.item()
+        loss_count += 1
 
         optimizer.zero_grad()
         loss.backward()
@@ -225,11 +234,12 @@ def train(cfg_path, out_dir=None, device="cuda"):
             model.train()
 
             log.log("Iteration", curr_iters, collection="0_Main")
-            log.log("Loss", loss_sum / output_iter, collection="0_Main")
+            log.log("Loss", loss_sum / max(loss_count, 1), collection="0_Main")
             log.print_log()
             log.write_log()
 
             loss_sum = 0
+            loss_count = 0
             progress_bar.update(curr_iters + 1, loss=loss.item(), force=True)
 
         curr_iters += 1
@@ -245,11 +255,12 @@ if __name__ == "__main__":
     parser.add_argument("--out_dir", type=str, required=True)
     parser.add_argument("--model_file", type=str, default="")
     parser.add_argument("--device", type=str, default="cuda")
+    parser.add_argument("--logger", type=str, default="tb", choices=["txt", "tb"])
     args = parser.parse_args()
 
     if args.mode == "train":
         print("Training new model...")
-        train(args.cfg_path, out_dir=args.out_dir, device=args.device)
+        train(args.cfg_path, out_dir=args.out_dir, device=args.device, logger_type=args.logger)
     else:
         print("Testing model...")
         test(args.cfg_path, args.model_file, out_dir=args.out_dir, device=args.device)

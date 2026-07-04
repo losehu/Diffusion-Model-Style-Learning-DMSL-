@@ -73,6 +73,7 @@ echo "Training Go2 ${GAIT} steering prior"
 echo "Output: ${OUT_DIR}"
 echo "Motion: ${MOTION_FILE}"
 echo "Preset: ${PRESET_CONFIG}"
+echo "TensorBoard: tensorboard --logdir=${OUT_DIR} --port=6006"
 
 python tools/diffusion_model/train_tinymdm.py \
   --cfg_path "$RUN_PRIOR_CONFIG" \

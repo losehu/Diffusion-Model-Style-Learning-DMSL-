@@ -72,6 +72,7 @@ echo "Training Go2 ${GAIT} track policy"
 echo "Output: ${OUT_DIR}"
 echo "Prior:  ${PRIOR_DIR}"
 echo "Motion: ${MOTION_FILE}"
+echo "TensorBoard: tensorboard --logdir=${OUT_DIR} --port=6006"
 
 python mimickit/run.py \
   --arg_file args/smp_go2_trot_track_args.txt \
