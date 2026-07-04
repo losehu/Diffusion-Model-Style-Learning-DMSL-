@@ -25,7 +25,7 @@ enable_early_termination: True
 key_bodies: ["FR_foot", "FL_foot", "RR_foot", "RL_foot"]
 contact_bodies: ["FR_foot", "FL_foot", "RR_foot", "RL_foot"]
 
-motion_file: "data/motions/go2/go2_apex_trot.pkl"
+motion_file: "data/motions/go2/go2_apex_trot_clean.pkl"
 
 joint_err_w: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 

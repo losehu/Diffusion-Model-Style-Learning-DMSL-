@@ -24,7 +24,7 @@ output_iter: 2_000
 grad_clip_norm: 1.0
 
 env_config: "data/envs/smp_go2_steering_env.yaml"
-motion_file: "data/motions/go2/go2_apex_trot.pkl"
+motion_file: "data/motions/go2/go2_apex_trot_clean.pkl"
 control_freq: 30
 
 master_port: '11435'

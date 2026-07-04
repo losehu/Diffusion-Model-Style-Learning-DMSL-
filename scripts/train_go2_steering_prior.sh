@@ -34,7 +34,14 @@ print(motion_file)
 PY
   )"
 fi
-MOTION_FILE="${MOTION_FILE:-data/motions/go2/go2_apex_${GAIT}.pkl}"
+if [[ -z "${MOTION_FILE:-}" ]]; then
+  CLEAN_MOTION_FILE="data/motions/go2/go2_apex_${GAIT}_clean.pkl"
+  if [[ -f "$CLEAN_MOTION_FILE" ]]; then
+    MOTION_FILE="$CLEAN_MOTION_FILE"
+  else
+    MOTION_FILE="data/motions/go2/go2_apex_${GAIT}.pkl"
+  fi
+fi
 OUT_DIR="${OUT_DIR:-output/smp_prior_go2_${GAIT}_steering_${STAMP}}"
 DEVICE="${DEVICE:-cuda}"
 

@@ -712,7 +712,7 @@ class ViewerServer:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--char_file", default="data/assets/go2/go2.xml")
-    parser.add_argument("--motion_file", default="data/motions/go2/go2_apex_trot.pkl")
+    parser.add_argument("--motion_file", default="data/motions/go2/go2_apex_trot_clean.pkl")
     parser.add_argument("--model_file", default="")
     parser.add_argument("--env_config", default="data/envs/smp_go2_trot_track_env.yaml")
     parser.add_argument("--agent_config", default="output/smp_go2_trot_track_reward/agent_config.yaml")

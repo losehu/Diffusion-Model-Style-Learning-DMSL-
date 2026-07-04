@@ -13,17 +13,31 @@ Go2 使用 APEX 数据转换后的动作：
 
 ```text
 data/motions/go2/go2_apex_trot.pkl
+data/motions/go2/go2_apex_trot_clean.pkl
 data/motions/go2/go2_apex_pace.pkl
+data/motions/go2/go2_apex_pace_clean.pkl
 data/motions/go2/go2_apex_canter.pkl
+data/motions/go2/go2_apex_canter_clean.pkl
 data/motions/go2/go2_apex_jump.pkl
 data/motions/go2/go2_apex_jump_clean.pkl
 ```
 
 每个 gait 都要先训练自己的 SMP prior，再训练 policy。不要拿 `trot` prior 去训 `jump` policy。
 
-`go2_apex_jump.pkl` 的末尾有一帧回到起点的根位置跳变，会造成极大的假速度。训练 jump 时优先使用 `go2_apex_jump_clean.pkl`。
+APEX 原始 `trot/pace/canter/jump` 文件的末尾都有一帧回到起点的根位置跳变，会造成极大的假速度。训练默认使用 `*_clean.pkl`，旧 pkl 只保留为原始转换结果。
 
-如果 clean 文件不存在，用下面的命令重新生成：
+如果 clean 文件不存在，用下面的命令重新生成。循环 gait 用 `loop_mode 1`：
+
+```bash
+python tools/gmr_to_mimickit/apex_go2_csv_to_mimickit.py \
+  --input_file data/motions/go2/apex_csv/go2_retarget_pace.csv \
+  --output_file data/motions/go2/go2_apex_pace_clean.pkl \
+  --fps 50 \
+  --loop_mode 1 \
+  --drop_final_wrap_threshold 1.0
+```
+
+jump 用 `loop_mode 0`：
 
 ```bash
 python tools/gmr_to_mimickit/apex_go2_csv_to_mimickit.py \
@@ -162,7 +176,7 @@ GAIT=jump ./scripts/train_go2_steering_policy.sh
 
 当前 APEX jump 专家速度大约是 `1.5 m/s`，而且轨迹不是固定世界 +x。`SPEED_MAX=0.8` 这种低速 steering 会强迫策略偏离专家动作，更容易趴地。jump 建议优先使用下面的 track 路线。
 
-policy 脚本会检查 prior 的 `motion_file` 是否和当前 `MOTION_FILE` 一致。如果之前用坏的 `go2_apex_jump.pkl` 训练过 jump prior，不要复用那个 prior，必须用 clean 文件重新训练 prior。
+policy 脚本会检查 prior 的 `motion_file` 是否和当前 `MOTION_FILE` 一致。如果之前用坏的原始 pkl 训练过 prior，不要复用那个 prior，必须用 clean 文件重新训练 prior。
 
 ### 测试 Steering Policy
 

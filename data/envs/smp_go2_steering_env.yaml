@@ -27,7 +27,7 @@ tar_speed_max: 5.0
 tar_change_time_min: 4.0
 tar_change_time_max: 7.0
 
-motion_file: "data/motions/go2/go2_apex_trot.pkl"
+motion_file: "data/motions/go2/go2_apex_trot_clean.pkl"
 
 reward_steering_tar_w: 0.7
 reward_steering_face_w: 0.3
