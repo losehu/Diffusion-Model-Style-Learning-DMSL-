@@ -156,6 +156,8 @@ GAIT=pace ./scripts/train_go2_steering_prior.sh
 GAIT=pace ./scripts/train_go2_steering_policy.sh
 ```
 
+pace 的专家速度比较窄，默认 preset 用 `SPEED_MIN=0.9`、`SPEED_MAX=1.1`、`TASK_REWARD_WEIGHT=0.5`、`SMP_REWARD_WEIGHT=0.5`。如果看到 `Task_Reward_Mean` 很高但 `Smp_Reward_Mean` 接近 0，说明 policy 又在刷速度奖励，先不要扩大速度范围。
+
 Canter：
 
 ```bash

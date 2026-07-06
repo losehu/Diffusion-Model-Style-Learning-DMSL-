@@ -45,15 +45,17 @@ pace:
     # clean 版本去掉了 APEX CSV 末尾回到起点的坏帧。
     motion_file: "data/motions/go2/go2_apex_pace_clean.pkl"
     rand_tar_dir: false
-    # pace 推荐速度范围。
-    tar_speed_min: 0.5
-    tar_speed_max: 1.3
+    # pace 专家速度分布很窄，局部前向速度大约 1.02 m/s。
+    # 范围太宽时 policy 会优先刷速度奖励，SMP 风格奖励会塌到接近 0。
+    tar_speed_min: 0.9
+    tar_speed_max: 1.1
     reward_steering_tar_w: 1.0
     reward_steering_face_w: 0.0
     reward_steering_vel_scale: 4.0
   agent:
-    task_reward_weight: 0.8
-    smp_reward_weight: 0.2
+    # pace 比 trot 更容易钻速度奖励的空子，默认先保住 SMP 风格。
+    task_reward_weight: 0.5
+    smp_reward_weight: 0.5
 
 canter:
   env:
