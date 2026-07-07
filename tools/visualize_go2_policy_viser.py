@@ -219,9 +219,14 @@ def main():
 
     has_commands = hasattr(env, "commands")
     has_steering_task = hasattr(env, "_tar_speed") and hasattr(env, "_tar_dir")
+    cmd_x_initial = 0.8
+    cmd_x_limit = 2.0
+    if has_steering_task and hasattr(env, "_tar_speed_min") and hasattr(env, "_tar_speed_max"):
+        cmd_x_initial = 0.5 * (float(env._tar_speed_min) + float(env._tar_speed_max))
+        cmd_x_limit = max(cmd_x_limit, abs(float(env._tar_speed_min)), abs(float(env._tar_speed_max)))
     with server.gui.add_folder("Commands"):
         cmd_enable = server.gui.add_checkbox("Override commands", initial_value=has_commands or has_steering_task)
-        cmd_x = server.gui.add_slider("cmd vx", min=-2.0, max=2.0, step=0.05, initial_value=0.8)
+        cmd_x = server.gui.add_slider("cmd vx", min=-cmd_x_limit, max=cmd_x_limit, step=0.05, initial_value=cmd_x_initial)
         cmd_y = server.gui.add_slider("cmd vy", min=-1.0, max=1.0, step=0.05, initial_value=0.0)
         cmd_yaw = server.gui.add_slider("cmd yaw", min=-2.0, max=2.0, step=0.05, initial_value=0.0)
         cmd_note = server.gui.add_text(

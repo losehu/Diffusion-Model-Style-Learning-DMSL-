@@ -16,6 +16,7 @@ data/motions/go2/go2_apex_trot.pkl
 data/motions/go2/go2_apex_trot_clean.pkl
 data/motions/go2/go2_apex_pace.pkl
 data/motions/go2/go2_apex_pace_clean.pkl
+data/motions/go2/go2_apex_pace_aligned.pkl
 data/motions/go2/go2_apex_canter.pkl
 data/motions/go2/go2_apex_canter_clean.pkl
 data/motions/go2/go2_apex_jump.pkl
@@ -24,7 +25,9 @@ data/motions/go2/go2_apex_jump_clean.pkl
 
 每个 gait 都要先训练自己的 SMP prior，再训练 policy。不要拿 `trot` prior 去训 `jump` policy。
 
-APEX 原始 `trot/pace/canter/jump` 文件的末尾都有一帧回到起点的根位置跳变，会造成极大的假速度。训练默认使用 `*_clean.pkl`，旧 pkl 只保留为原始转换结果。
+APEX 原始 `trot/pace/canter/jump` 文件的末尾都有一帧回到起点的根位置跳变，会造成极大的假速度。训练默认使用 clean/aligned 数据，旧 pkl 只保留为原始转换结果。
+
+pace 专家轨迹原本朝世界坐标约 `-22.5°` 方向移动，而 steering 训练默认目标是世界 `+X`。`go2_apex_pace_aligned.pkl` 在 clean 基础上把 root XY 和 root yaw 旋到 `+X`，否则 policy 容易一边追速度任务一边转身，最后变成倒着跳或乱跳。
 
 如果 clean 文件不存在，用下面的命令重新生成。循环 gait 用 `loop_mode 1`：
 
@@ -35,6 +38,15 @@ python tools/gmr_to_mimickit/apex_go2_csv_to_mimickit.py \
   --fps 50 \
   --loop_mode 1 \
   --drop_final_wrap_threshold 1.0
+```
+
+如果 aligned 文件不存在，用下面的命令重新生成：
+
+```bash
+python tools/gmr_to_mimickit/align_motion_heading.py \
+  --input_file data/motions/go2/go2_apex_pace_clean.pkl \
+  --output_file data/motions/go2/go2_apex_pace_aligned.pkl \
+  --target_heading_deg 0
 ```
 
 jump 用 `loop_mode 0`：
@@ -155,6 +167,8 @@ GAIT=pace ./scripts/train_go2_steering_prior.sh
 
 GAIT=pace ./scripts/train_go2_steering_policy.sh
 ```
+
+pace 默认使用 `data/motions/go2/go2_apex_pace_aligned.pkl`。如果之前用 `go2_apex_pace_clean.pkl` 训练过 prior，不能复用，必须重新训练 prior。
 
 pace 的专家速度比较窄，默认 preset 用 `SPEED_MIN=0.9`、`SPEED_MAX=1.1`、`TASK_REWARD_WEIGHT=0.5`、`SMP_REWARD_WEIGHT=0.5`。如果看到 `Task_Reward_Mean` 很高但 `Smp_Reward_Mean` 接近 0，说明 policy 又在刷速度奖励，先不要扩大速度范围。
 

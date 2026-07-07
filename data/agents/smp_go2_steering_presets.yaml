@@ -42,8 +42,8 @@ trot:
     smp_reward_weight: 0.2
 pace:
   env:
-    # clean 版本去掉了 APEX CSV 末尾回到起点的坏帧。
-    motion_file: "data/motions/go2/go2_apex_pace_clean.pkl"
+    # aligned 版本先 clean 掉坏尾帧，再把专家位移方向旋到世界 +X。
+    motion_file: "data/motions/go2/go2_apex_pace_aligned.pkl"
     rand_tar_dir: false
     # pace 专家速度分布很窄，局部前向速度大约 1.02 m/s。
     # 范围太宽时 policy 会优先刷速度奖励，SMP 风格奖励会塌到接近 0。
